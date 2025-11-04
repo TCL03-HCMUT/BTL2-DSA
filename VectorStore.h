@@ -44,6 +44,11 @@ class AVLTree {
         AVLNode* rotateRight(AVLNode*& node);
         AVLNode* rotateLeft(AVLNode*& node);
         void clearHelper(AVLNode* node);
+        int getHeightHelper(AVLNode *root) const;
+        void inorderHelper(AVLNode *root, void (*action)(const T&)) const;
+        AVLNode *insert(AVLNode *&root, const K &key, const T &value, bool &taller);
+        AVLNode *leftBalance(AVLNode *&root, bool &taller);
+        AVLNode *rightBalance(AVLNode *&root, bool &taller);
 
     public:
         AVLTree();
