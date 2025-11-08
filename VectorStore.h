@@ -50,6 +50,10 @@ class AVLTree {
         AVLNode *leftBalance(AVLNode *&root, bool &taller);
         AVLNode *rightBalance(AVLNode *&root, bool &taller);
 
+        AVLNode *remove(AVLNode *&root, const K&key, bool &shorter, bool &success);
+        AVLNode *deleteLeftBalance(AVLNode *&root, bool &shorter);
+        AVLNode *deleteRightBalance(AVLNode *&root, bool &shorter);
+
     public:
         AVLTree();
         ~AVLTree();
