@@ -322,13 +322,14 @@ typename AVLTree<K, T>::AVLNode *AVLTree<K, T>::remove(AVLTree<K, T>::AVLNode *&
         }
         else
         {
-            AVLNode* exchPtr = root->pRight;
-            while(exchPtr->pLeft != nullptr){
+            AVLNode *exchPtr = root->pRight;
+            while (exchPtr->pLeft != nullptr)
+            {
                 exchPtr = exchPtr->pLeft;
             }
-            root->data =exchPtr->data;
-            root->pRight = remove(root->pRight,exchPtr->key, shorter, success);
-            if(shorter)
+            root->data = exchPtr->data;
+            root->pRight = remove(root->pRight, exchPtr->key, shorter, success);
+            if (shorter)
             {
                 root = deleteLeftBalance(root, shorter);
             }
@@ -338,7 +339,7 @@ typename AVLTree<K, T>::AVLNode *AVLTree<K, T>::remove(AVLTree<K, T>::AVLNode *&
 }
 
 // Balance when right subtree is shorter after deleting the right branch
-template<class K, class T>
+template <class K, class T>
 typename AVLTree<K, T>::AVLNode *AVLTree<K, T>::deleteLeftBalance(AVLTree<K, T>::AVLNode *&root, bool &shorter)
 {
     if (root->balance == RH)
@@ -356,17 +357,21 @@ typename AVLTree<K, T>::AVLNode *AVLTree<K, T>::deleteLeftBalance(AVLTree<K, T>:
         AVLNode *leftTree = root->pLeft;
 
         // Case 1 : LR
-        if(leftTree->balance == RH){
-            AVLNode* rightTree = leftTree->pRight;
-            if(rightTree->balance == RH){
+        if (leftTree->balance == RH)
+        {
+            AVLNode *rightTree = leftTree->pRight;
+            if (rightTree->balance == RH)
+            {
                 leftTree->balance = LH;
                 root->balance = EH;
             }
-            else if(rightTree->balance == EH){
+            else if (rightTree->balance == EH)
+            {
                 root->balance = RH;
                 leftTree->balance = EH;
             }
-            else{
+            else
+            {
                 root->balance = RH;
                 leftTree->balance = EH;
             }
@@ -375,12 +380,15 @@ typename AVLTree<K, T>::AVLNode *AVLTree<K, T>::deleteLeftBalance(AVLTree<K, T>:
             root = rotateRight(root);
         }
         // Case 2: LL, right rotate
-        else{
-            if(leftTree->balance != EH){
+        else
+        {
+            if (leftTree->balance != EH)
+            {
                 root->balance = EH;
                 leftTree->balance = EH;
             }
-            else{
+            else
+            {
                 root->balance = LH;
                 leftTree->balance = RH;
                 shorter = false;
@@ -392,7 +400,7 @@ typename AVLTree<K, T>::AVLNode *AVLTree<K, T>::deleteLeftBalance(AVLTree<K, T>:
 }
 
 // Balance when left subtree is shorter after deleting the left branch
-template<class K, class T>
+template <class K, class T>
 typename AVLTree<K, T>::AVLNode *AVLTree<K, T>::deleteRightBalance(AVLTree<K, T>::AVLNode *&root, bool &shorter)
 {
     if (root->balance == LH)
@@ -410,17 +418,21 @@ typename AVLTree<K, T>::AVLNode *AVLTree<K, T>::deleteRightBalance(AVLTree<K, T>
         AVLNode *rightTree = root->pRight;
 
         // Case 1 : RL
-        if(rightTree->balance == LH){
-            AVLNode* leftTree = rightTree->pLeft;
-            if(leftTree->balance == LH){
+        if (rightTree->balance == LH)
+        {
+            AVLNode *leftTree = rightTree->pLeft;
+            if (leftTree->balance == LH)
+            {
                 rightTree->balance = RH;
                 root->balance = EH;
             }
-            else if(leftTree->balance == EH){
+            else if (leftTree->balance == EH)
+            {
                 root->balance = LH;
                 rightTree->balance = EH;
             }
-            else{
+            else
+            {
                 root->balance = LH;
                 rightTree->balance = EH;
             }
@@ -429,12 +441,15 @@ typename AVLTree<K, T>::AVLNode *AVLTree<K, T>::deleteRightBalance(AVLTree<K, T>
             root = rotateLeft(root);
         }
         // Case 2: RR, left rotate
-        else{
-            if(rightTree->balance != EH){
+        else
+        {
+            if (rightTree->balance != EH)
+            {
                 root->balance = EH;
                 rightTree->balance = EH;
             }
-            else{
+            else
+            {
                 root->balance = RH;
                 rightTree->balance = LH;
                 shorter = false;
@@ -445,11 +460,9 @@ typename AVLTree<K, T>::AVLNode *AVLTree<K, T>::deleteRightBalance(AVLTree<K, T>
     return root;
 }
 
-
 template <class K, class T>
 void AVLTree<K, T>::remove(const K &key)
 {
-    // TODO:
     bool shorter = false;
     bool success = false;
     this->root = remove(this->root, key, shorter, success);
@@ -541,13 +554,31 @@ void AVLTree<K, T>::inorderHelper(AVLTree<K, T>::AVLNode *root, void (*action)(c
 template <class K, class T>
 void AVLTree<K, T>::inorderTraversal(void (*action)(const T &)) const
 {
-    // TODO:
     inorderHelper(this->root, action);
 }
 
 // =====================================
 // RedBlackTree<K, T> implementation
 // =====================================
+template <class K, class T>
+RedBlackTree<K, T>::RBTNode::RBTNode(const K &key, const T &value)
+{
+    this->key = key;
+    this->data = value;
+    this->color = RED;
+    this->left = this->right = this->parent = nullptr;
+}
+
+template <class K, class T>
+void RedBlackTree<K, T>::RBTNode::recolorToRed()
+{
+    this->color = RED;
+}
+template <class K, class T>
+void RedBlackTree<K, T>::RBTNode::recolorToBlack()
+{
+    this->color = BLACK;
+}
 
 template <class K, class T>
 void RedBlackTree<K, T>::printTreeStructure() const
@@ -636,6 +667,357 @@ void RedBlackTree<K, T>::printTreeStructure() const
 }
 
 // TODO: Implement all other RedBlackTree<K, T> methods here
+
+template <class K, class T>
+void RedBlackTree<K, T>::rotateLeft(RBTNode *node)
+{
+    RBTNode *child = node->right;
+    node->right = child->left;
+    if (node->right != nullptr)
+        (node->right)->parent = node;
+    child->parent = node->parent;
+    if (node->parent == nullptr)
+        root = child;
+    else if (node == (node->parent)->left)
+        (node->parent)->left = child;
+    else
+        (node->parent)->right = child;
+    child->left = node;
+    node->parent = child;
+}
+
+template <class K, class T>
+void RedBlackTree<K, T>::rotateRight(RBTNode *node)
+{
+    RBTNode *child = node->left;
+    node->left = child->right;
+    if (node->left != nullptr)
+        (node->left)->parent = node;
+    child->parent = node->parent;
+    if (node->parent == nullptr)
+        root = child;
+    else if (node == (node->parent)->right)
+        (node->parent)->right = child;
+    else
+        (node->parent)->left = child;
+    child->right = node;
+    node->parent = child;
+}
+
+template <class K, class T>
+typename RedBlackTree<K, T>::RBTNode *RedBlackTree<K, T>::lowerBoundNode(const K &key) const
+{
+    RBTNode *best = nullptr, *current = this->root;
+    while (current)
+    {
+        if (current->key >= key) // valid
+        {
+            best = current;
+            current = current->left; // try a smaller node
+        }
+        else
+        {
+            // too low, must go higher
+            current = current->right;
+        }
+    }
+    return best;
+}
+
+template <class K, class T>
+typename RedBlackTree<K, T>::RBTNode *RedBlackTree<K, T>::upperBoundNode(const K &key) const
+{
+    RBTNode *best = nullptr, *current = this->root;
+    while (current)
+    {
+        if (current->key > key) // valid
+        {
+            best = current;
+            current = current->left; // try a smaller node
+        }
+        else
+        {
+            // too low, must go higher
+            current = current->right;
+        }
+    }
+    return best;
+}
+
+template <class K, class T>
+RedBlackTree<K, T>::RedBlackTree()
+{
+    this->root = nullptr;
+}
+template <class K, class T>
+RedBlackTree<K, T>::~RedBlackTree()
+{
+    clear();
+}
+
+template <class K, class T>
+bool RedBlackTree<K, T>::empty() const
+{
+    return !root;
+}
+
+template <class K, class T>
+int RedBlackTree<K, T>::size() const
+{
+    if (!(this->root))
+        return 0;
+    queue<RBTNode *> q;
+    q.push(root);
+    int result = 0;
+    while (!q.empty())
+    {
+        RBTNode *current = q.front();
+        q.pop();
+        result++;
+        if (current->left)
+            q.push(current->left);
+        if (current->right)
+            q.push(current->right);
+    }
+    return result;
+}
+
+template <class K, class T>
+void RedBlackTree<K, T>::clear()
+{
+    clearHelper(this->root);
+    this->root = nullptr;
+}
+
+template <class K, class T>
+void RedBlackTree<K, T>::clearHelper(RBTNode *node)
+{
+    if (node)
+    {
+        clearHelper(node->left);
+        clearHelper(node->right);
+        delete node;
+    }
+}
+
+template <class K, class T>
+void RedBlackTree<K, T>::insert(const K &key, const T &value)
+{
+    RBTNode *newNode = new RBTNode(key, value);
+
+    RBTNode *parent = nullptr, *current = root;
+
+    while (current != nullptr)
+    {
+        parent = current;
+        if (newNode->key < current->key)
+        {
+            current = current->left;
+        }
+        else if (newNode->key > current->key)
+        {
+            current = current->right;
+        }
+        else
+        {
+            // key already exists
+            delete newNode;
+            return;
+        }
+    }
+
+    newNode->parent = parent;
+    if (parent == nullptr)
+    {
+        root = newNode; // empty tree
+    }
+    else if (newNode->key < parent->key)
+    {
+        parent->left = newNode;
+    }
+    else
+    {
+        parent->right = newNode;
+    }
+
+    insertFixup(newNode);
+}
+
+template <class K, class T>
+void RedBlackTree<K, T>::insertFixup(RBTNode *node)
+{
+    RBTNode *parent = nullptr, *grandparent = nullptr;
+    // Loop until no RED-RED case
+    while (node != root && (node->parent)->color == RED)
+    {
+        parent = node->parent;
+        grandparent = parent->parent;
+
+        // Case A: Parent is a LEFT child
+        if (parent == grandparent->left)
+        {
+            RBTNode *uncle = grandparent->right;
+
+            // Case 1: uncle is RED
+            // Recolor P U to black, G to red
+            if (uncle != nullptr && uncle->color == RED)
+            {
+                grandparent->recolorToRed();
+                parent->recolorToBlack();
+                uncle->recolorToBlack();
+                node = grandparent;
+            }
+            // Case 2: uncle is BLACK/nullptr
+            else
+            {
+                // Case 2a: "Triangle" (current is a right child)
+                if (node == parent->right)
+                {
+                    rotateLeft(parent);
+                    node = parent;
+                    parent = node->parent;
+                }
+
+                // Case 2b: "Line" (current is a left child)
+                rotateRight(grandparent);
+                swap(parent->color, grandparent->color);
+                node = parent;
+            }
+        }
+        // Case B: parent is a RIGHT child
+        else
+        {
+            RBTNode *uncle = grandparent->left;
+            // Case 1: Uncle is RED
+            if (uncle != nullptr && uncle->color == RED)
+            {
+                grandparent->color = RED;
+                parent->color = BLACK;
+                uncle->color = BLACK;
+                node = grandparent;
+            }
+            // Case 2: Uncle is BLACK
+            else
+            {
+                // Case 2a: "Triangle" (node is a LEFT child)
+                if (node == parent->left)
+                {
+                    rotateRight(parent);
+                    node = parent;
+                    parent = node->parent;
+                }
+                // Case 2b: "Line" (node is a RIGHT child)
+                rotateLeft(grandparent);
+                swap(parent->color, grandparent->color);
+                node = parent;
+            }
+        }
+    }
+    root->color = BLACK;
+}
+
+// Replaces subtree 'u' with 'v'
+template <class K, class T>
+void RedBlackTree<K, T>::transplant(RBTNode *u, RBTNode *v)
+{
+    if (u->parent == nullptr)
+    {
+        root = v;
+    }
+    else if (u == (u->parent)->left)
+    {
+        (u->parent)->left = v;
+    }
+    else
+    {
+        (u->parent)->right = v;
+    }
+    if (v != nullptr)
+    {
+        v->parent = u->parent;
+    }
+}
+
+// Find min, assumes node is not nullptr
+template <class K, class T>
+typename RedBlackTree<K, T>::RBTNode *RedBlackTree<K, T>::findMax(RBTNode *node)
+{
+    while (node->right != nullptr)
+        node = node->right;
+    return node;
+}
+
+template <class K, class T>
+void RedBlackTree<K, T>::remove(const K &key)
+{
+    // TODO:
+}
+
+template <class K, class T>
+typename RedBlackTree<K, T>::RBTNode *RedBlackTree<K, T>::find(const K &key) const
+{
+    if (!root)
+        return nullptr;
+
+    RBTNode *current = root;
+    while (current)
+    {
+        if (key == current->key)
+        {
+            return current;
+        }
+        else if (key < current->key)
+        {
+            current = current->left;
+        }
+        else
+        {
+            current = current->right;
+        }
+    }
+    return nullptr;
+}
+
+template <class K, class T>
+bool RedBlackTree<K, T>::contains(const K &key) const
+{
+    if (!root)
+        return false;
+
+    RBTNode *current = root;
+    while (current)
+    {
+        if (key == current->key)
+        {
+            return true;
+        }
+        else if (key < current->key)
+        {
+            current = current->left;
+        }
+        else
+        {
+            current = current->right;
+        }
+    }
+    return false;
+}
+
+template <class K, class T>
+typename RedBlackTree<K, T>::RBTNode *RedBlackTree<K, T>::lowerBound(const K &key, bool &found) const
+{
+    RBTNode *result = lowerBoundNode(key);
+    found = (result != nullptr);
+    return result;
+}
+
+template <class K, class T>
+typename RedBlackTree<K, T>::RBTNode *RedBlackTree<K, T>::upperBound(const K &key, bool &found) const
+{
+    RBTNode *result = upperBoundNode(key);
+    found = (result != nullptr);
+    return result;
+}
 
 // =====================================
 // VectorRecord implementation
