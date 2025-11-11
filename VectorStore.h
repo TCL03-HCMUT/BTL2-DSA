@@ -41,6 +41,7 @@ public:
 
 protected:
     AVLNode *root;
+    int count;
 
     AVLNode *rotateRight(AVLNode *&node);
     AVLNode *rotateLeft(AVLNode *&node);
@@ -73,6 +74,9 @@ public:
     void inorderTraversal(void (*action)(const T &)) const;
 
     AVLNode *getRoot() const { return root; }
+
+    AVLNode *getNodeAt(int index);
+    AVLNode *getNodeAt(AVLNode *node, int index, int &count);
 };
 
 enum Color
@@ -111,6 +115,7 @@ public:
 
 private:
     RBTNode *root;
+    int count;
 
 protected:
     void rotateLeft(RBTNode *node);
@@ -122,10 +127,13 @@ protected:
     void clearHelper(RBTNode *root);
 
     // Insert helpers
-    void transplant(RBTNode *u, RBTNode *v);
-    RBTNode *findMax(RBTNode *node);
     void insertFixup(RBTNode *node);
 
+    // Delete helpers
+    void transplant(RBTNode *u, RBTNode *v);
+    RBTNode *findMax(RBTNode *node);
+    void removeNode(RBTNode *deleteNode);
+    void removeFixup(RBTNode *doubleBlackNode, RBTNode *doubleBlackParent);
 
 public:
     RedBlackTree();
@@ -143,6 +151,8 @@ public:
     RBTNode *upperBound(const K &key, bool &found) const;
 
     void printTreeStructure() const;
+
+    
 };
 
 // ------------------------------
@@ -169,6 +179,14 @@ public:
           rawLength(static_cast<int>(_rawText.size())),
           vector(_vec),
           distanceFromReference(_dist) {}
+    VectorRecord(const VectorRecord &other)
+    {
+        this->id = other.id;
+        this->rawText = other.rawText;
+        this->rawLength = other.rawLength;
+        this->vector = other.vector;
+        this->distanceFromReference = other.distanceFromReference;
+    }
 
     // Overload operator << to print only the id
     friend std::ostream &operator<<(std::ostream &os, const VectorRecord &record);
@@ -189,6 +207,8 @@ private:
     int dimension;
     int count;
     double averageDistance;
+    int maxId;
+    vector<VectorRecord> recordList;
 
     std::vector<float> *(*embeddingFunction)(const std::string &);
 
@@ -200,8 +220,16 @@ private:
     void rebuildTreeWithNewRoot(VectorRecord *newRoot);
 
     VectorRecord *findVectorNearestToDistance(double targetDistance) const;
+    double norm(const std::vector<float> &vec) const;
+
+    void rangeCheck(int index) const;
+    void metricCheck(string metric) const;
+    
 
 public:
+    void forEachAction(AVLTree<double, VectorRecord>::AVLNode *root, void (*action)(vector<float>&, int, string&));
+    void getSortedId(AVLTree<double, VectorRecord>::AVLNode *root, vector<int> &ids) const;
+    void getSortedRecords(AVLTree<double, VectorRecord>::AVLNode *root, vector<VectorRecord *> &records) const;
     VectorStore(int dimension,
                 std::vector<float> *(*embeddingFunction)(const std::string &),
                 const std::vector<float> &referenceVector);

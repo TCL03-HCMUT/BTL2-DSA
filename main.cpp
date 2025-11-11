@@ -33,11 +33,12 @@ void testcase3()
     for (int i = 0; i < 5; i++)
     {
         tree.insert(i, i);
-        tree.insert(-i, -i);
     }
     tree.printTreeStructure();
-    // tree.inorderTraversal([](const int &val) -> void{cout << val << " ";});
     cout << "\n";
+
+    tree.remove(1);
+    tree.printTreeStructure();
 }
 
 int main() {
