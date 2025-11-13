@@ -208,6 +208,7 @@ private:
     int count;
     double averageDistance;
     int maxId;
+    AVLTree<int, int> *ids;
     vector<VectorRecord> recordList;
 
     std::vector<float> *(*embeddingFunction)(const std::string &);
@@ -225,6 +226,7 @@ private:
     void rangeCheck(int index) const;
     void metricCheck(string metric) const;
     
+    void findNearestHelper(AVLTree<double, VectorRecord>::AVLNode *root, const std::vector<float> &query, string metric, double &bestDistance, int &bestID);
 
 public:
     void forEachAction(AVLTree<double, VectorRecord>::AVLNode *root, void (*action)(vector<float>&, int, string&));

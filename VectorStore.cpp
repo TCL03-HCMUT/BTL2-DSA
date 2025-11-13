@@ -1285,6 +1285,7 @@ VectorStore::VectorStore(int dimension, std::vector<float> *(*embeddingFunction)
 {
     vectorStore = new AVLTree<double, VectorRecord>;
     normIndex = new RedBlackTree<double, VectorRecord>;
+    ids = new AVLTree<int, int>;
     this->referenceVector = const_cast<vector<float>*>(&referenceVector);
     rootVector = nullptr;
     count = 0;
@@ -1300,7 +1301,7 @@ VectorStore::~VectorStore()
     if (rootVector) delete rootVector;
     delete vectorStore;
     delete normIndex;
-
+    delete ids;
 }
 
 bool VectorStore::empty()
@@ -1320,6 +1321,7 @@ void VectorStore::clear()
     vectorStore->inorderTraversal(deleteRecord);
     vectorStore->clear();
     normIndex->clear();
+    ids->clear();
     if (rootVector) delete rootVector;
     rootVector = nullptr;
     count = 0;
@@ -1360,6 +1362,7 @@ void VectorStore::addText(string rawText)
     normIndex->insert(normValue, record);
     count++;
     maxId++;
+    ids->insert(maxId, maxId);
 }
 
 void VectorStore::rangeCheck(int index) const
@@ -1552,12 +1555,34 @@ double VectorStore::distanceByMetric(const std::vector<float> &a, const std::vec
     }
 }
 
+void VectorStore::findNearestHelper(AVLTree<double, VectorRecord>::AVLNode *root, const std::vector<float> &query, string metric, double &bestDistance, int &bestID)
+{
+    if (root)
+    {
+        findNearestHelper(root->pLeft, query, metric, bestDistance, bestID);
+        double distance = distanceByMetric(*root->data.vector, query, metric);
+        if (distance < bestDistance)
+        {
+            bestDistance = distance;
+            bestID = root->data.id;
+        }
+        findNearestHelper(root->pLeft, query, metric, bestDistance, bestID);
+    }
+}
+
 int VectorStore::findNearest(const std::vector<float> &query, string metric = "cosine")
 {
     metricCheck(metric);
     // TODO:
-
+    if (count <= 0) return -1;
+    auto root = vectorStore->getRoot();
+    double bestDistance = distanceByMetric(*root->data.vector, query, metric);
+    int bestID = root->data.id;
+    findNearestHelper(root, query, metric, bestDistance, bestID);
+    return bestID;
 }
+
+
 
 
 // Explicit template instantiation for the type used by VectorStore
