@@ -74,8 +74,8 @@ typename AVLTree<K, T>::AVLNode *AVLTree<K, T>::rotateRight(AVLTree<K, T>::AVLNo
     AVLNode *temp = root->pLeft;
     root->pLeft = temp->pRight;
     temp->pRight = root;
-    root = temp;
-    return root;
+    // root = temp;
+    return temp;
 }
 
 template <class K, class T>
@@ -84,12 +84,12 @@ typename AVLTree<K, T>::AVLNode *AVLTree<K, T>::rotateLeft(AVLTree<K, T>::AVLNod
     AVLNode *temp = root->pRight;
     root->pRight = temp->pLeft;
     temp->pLeft = root;
-    root = temp;
-    return root;
+    // root = temp;
+    return temp;
 }
 
 template <class K, class T>
-void AVLTree<K, T>::clearHelper(AVLTree<K, T>::AVLNode *node)
+void AVLTree<K, T>::clearHelper(AVLNode *node)
 {
     if (node)
     {
@@ -133,7 +133,7 @@ typename AVLTree<K, T>::AVLNode *AVLTree<K, T>::insert(AVLTree<K, T>::AVLNode *&
         taller = false;
         return root;
     }
-    if (key < root->key)
+    else if (key < root->key)
     {
         root->pLeft = insert(root->pLeft, key, value, taller);
         // cout << "Insert (" << key << ", " << value << ") complete \n";
@@ -194,7 +194,7 @@ typename AVLTree<K, T>::AVLNode *AVLTree<K, T>::leftBalance(AVLTree<K, T>::AVLNo
     {
         root = rotateRight(root);
         root->balance = EH;
-        (root->pRight)->balance = EH;
+        leftTree->balance = EH;
         taller = false;
     }
     else
@@ -237,7 +237,7 @@ typename AVLTree<K, T>::AVLNode *AVLTree<K, T>::rightBalance(AVLTree<K, T>::AVLN
     {
         root = rotateLeft(root);
         root->balance = EH;
-        (root->pLeft)->balance = EH;
+        rightTree->balance = EH;
         taller = false;
     }
     else
@@ -332,6 +332,7 @@ typename AVLTree<K, T>::AVLNode *AVLTree<K, T>::remove(AVLTree<K, T>::AVLNode *&
                 exchPtr = exchPtr->pLeft;
             }
             root->data = exchPtr->data;
+            root->key = exchPtr->key;
             root->pRight = remove(root->pRight, exchPtr->key, shorter, success);
             if (shorter)
             {
@@ -576,18 +577,47 @@ typename AVLTree<K, T>::AVLNode *AVLTree<K, T>::getNodeAt(AVLNode *node, int ind
     {
         return nullptr;
     }
-    AVLNode* leftResult = getNodeAt(node->pLeft, index, count);
+    AVLNode *leftResult = getNodeAt(node->pLeft, index, count);
     if (leftResult != nullptr)
     {
         return leftResult;
     }
 
-    if (count == k)
+    if (count == index)
     {
         return node;
     }
     count++;
     return getNodeAt(node->pRight, index, count);
+}
+
+template <class K, class T>
+void AVLTree<K, T>::getNodes(AVLNode *root, vector<AVLNode *> &result)
+{
+    if (root)
+    {
+        getNodes(root->pLeft, result);
+        result.push_back(root);
+        getNodes(root->pRight, result);
+    }
+}
+
+template <class K, class T>
+typename AVLTree<K, T>::AVLNode *AVLTree<K, T>::findMax()
+{
+    if (!root)
+        return nullptr;
+    AVLNode *current = root;
+    while (current->pRight)
+        current = current->pRight;
+
+    return current;
+}
+
+template <class K, class T>
+int AVLTree<K, T>::size() const
+{
+    return count;
 }
 
 // =====================================
@@ -740,41 +770,29 @@ void RedBlackTree<K, T>::rotateRight(RBTNode *node)
 template <class K, class T>
 typename RedBlackTree<K, T>::RBTNode *RedBlackTree<K, T>::lowerBoundNode(const K &key) const
 {
-    RBTNode *best = nullptr, *current = this->root;
-    while (current)
+    RBTNode *node = root;
+    while (node != nullptr)
     {
-        if (current->key >= key) // valid
-        {
-            best = current;
-            current = current->left; // try a smaller node
-        }
+        if (node->key >= key)
+            return node;
         else
-        {
-            // too low, must go higher
-            current = current->right;
-        }
+            node = node->right;
     }
-    return best;
+    return nullptr;
 }
 
 template <class K, class T>
 typename RedBlackTree<K, T>::RBTNode *RedBlackTree<K, T>::upperBoundNode(const K &key) const
 {
-    RBTNode *best = nullptr, *current = this->root;
-    while (current)
+    RBTNode *node = root;
+    while (node != nullptr)
     {
-        if (current->key > key) // valid
-        {
-            best = current;
-            current = current->left; // try a smaller node
-        }
+        if (node->key > key)
+            return node;
         else
-        {
-            // too low, must go higher
-            current = current->right;
-        }
+            node = node->right;
     }
-    return best;
+    return nullptr;
 }
 
 template <class K, class T>
@@ -917,8 +935,13 @@ void RedBlackTree<K, T>::insertFixup(RBTNode *node)
 
                 // Case 2b: "Line" (current is a left child)
                 rotateRight(grandparent);
-                swap(parent->color, grandparent->color);
-                node = parent;
+                // swap(parent->color, grandparent->color);
+                // auto temp = parent->color;
+                // parent->color = grandparent->color;
+                // grandparent->color = temp;
+                // node = parent;
+                parent->recolorToBlack();
+                grandparent->recolorToRed();
             }
         }
         // Case B: parent is a RIGHT child
@@ -945,8 +968,13 @@ void RedBlackTree<K, T>::insertFixup(RBTNode *node)
                 }
                 // Case 2b: "Line" (node is a RIGHT child)
                 rotateLeft(grandparent);
-                swap(parent->color, grandparent->color);
-                node = parent;
+                // swap(parent->color, grandparent->color);
+                // auto temp = parent->color;
+                // parent->color = grandparent->color;
+                // grandparent->color = temp;
+                // node = parent;
+                parent->recolorToBlack();
+                grandparent->recolorToRed();
             }
         }
     }
@@ -985,6 +1013,52 @@ typename RedBlackTree<K, T>::RBTNode *RedBlackTree<K, T>::findMax(RBTNode *node)
 }
 
 template <class K, class T>
+typename RedBlackTree<K, T>::RBTNode *RedBlackTree<K, T>::findMin(RBTNode *node) const
+{
+    while (node->left != nullptr)
+        node = node->left;
+    return node;
+}
+
+template <class K, class T>
+typename RedBlackTree<K, T>::RBTNode *RedBlackTree<K, T>::successor(RBTNode *node) const
+{
+    // Case 1: has right subtree
+    if (node->right != nullptr)
+    {
+        return findMin(node->right);
+    }
+
+    // Case 2: no right subtree
+    RBTNode *par = node->parent;
+    RBTNode *current = node;
+    while (par != nullptr && current == par->right)
+    {
+        current = par;
+        par = par->parent;
+    }
+
+    // par is either nullptr (reached root), or current is a left child of par (par is successor)
+    return par;
+}
+
+template <class K, class T>
+vector<typename RedBlackTree<K, T>::RBTNode *> RedBlackTree<K, T>::filter(K min, K max) const
+{
+    vector<RBTNode *> candidates;
+    bool found = false;
+    RBTNode *current = lowerBound(min, found);
+    RBTNode *end_bound = upperBound(max, found);
+
+    while (current != nullptr && current != end_bound)
+    {
+        candidates.push_back(current);
+        current = successor(current);
+    }
+    return candidates;
+}
+
+template <class K, class T>
 void RedBlackTree<K, T>::remove(const K &key)
 {
     RBTNode *deleteNode = root;
@@ -1004,7 +1078,8 @@ void RedBlackTree<K, T>::remove(const K &key)
         }
     }
 
-    if (deleteNode == nullptr) return;
+    if (deleteNode == nullptr)
+        return;
 
     removeNode(deleteNode);
 }
@@ -1012,13 +1087,13 @@ void RedBlackTree<K, T>::remove(const K &key)
 template <class K, class T>
 void RedBlackTree<K, T>::removeNode(RBTNode *deleteNode)
 {
-    RBTNode *replacementNode; // the node to replace the spliced node
-    RBTNode *replacementParent; // parent of spliced node
+    RBTNode *replacementNode;   // The node to replace the spliced node
+    RBTNode *replacementParent; // Parent of the spliced node
     RBTNode *spliceNode = deleteNode;
 
     Color originalColor = spliceNode->color;
 
-    // Case 1 and 2: 0/1 child
+    // Case 1 and 2: 0 or 1 child
     if (deleteNode->left == nullptr)
     {
         replacementNode = deleteNode->right;
@@ -1031,14 +1106,14 @@ void RedBlackTree<K, T>::removeNode(RBTNode *deleteNode)
         replacementParent = deleteNode->parent;
         transplant(deleteNode, deleteNode->left);
     }
-    // Case 3: 2 subtree, use inorder predecessor
+    // Case 3: 2 children, use in-order predecessor
     else
     {
         spliceNode = findMax(deleteNode->left);
         originalColor = spliceNode->color;
         replacementNode = spliceNode->left;
 
-        if (spliceNode->parent == deleteNode) // direct left child
+        if (spliceNode->parent == deleteNode) // Direct left child
         {
             if (replacementNode != nullptr)
             {
@@ -1048,22 +1123,22 @@ void RedBlackTree<K, T>::removeNode(RBTNode *deleteNode)
         }
         else
         {
-            // must deal with spliced node parent and child
+            // Update parent and child pointers for the spliced node
             replacementParent = spliceNode->parent;
             transplant(spliceNode, spliceNode->left);
             spliceNode->left = deleteNode->left;
-            (spliceNode->left)->parent = spliceNode;
+            spliceNode->left->parent = spliceNode;
         }
         transplant(deleteNode, spliceNode);
         spliceNode->right = deleteNode->right;
-        (spliceNode->right)->parent = spliceNode;
+        spliceNode->right->parent = spliceNode;
         spliceNode->color = deleteNode->color;
     }
 
     delete deleteNode;
     count--;
 
-    // If we spliced a black node, must fix
+    // Fix the Red-Black Tree properties if a black node was removed
     if (originalColor == BLACK)
     {
         removeFixup(replacementNode, replacementParent);
@@ -1076,9 +1151,11 @@ void RedBlackTree<K, T>::removeFixup(RBTNode *doubleBlackNode, RBTNode *parent)
     RBTNode *sibling;
     while (doubleBlackNode != root && (doubleBlackNode == nullptr || doubleBlackNode->color == BLACK))
     {
-        if (parent == nullptr) break;
+        if (parent == nullptr)
+            break;
 
-        auto nodeColor = [](RBTNode *node) -> Color {
+        auto nodeColor = [](RBTNode *node) -> Color
+        {
             return (node == nullptr) ? BLACK : node->color;
         };
 
@@ -1090,18 +1167,17 @@ void RedBlackTree<K, T>::removeFixup(RBTNode *doubleBlackNode, RBTNode *parent)
             // Case 2: Red sibling -> rotate P left, recolor P red, S black
             if (nodeColor(sibling) == RED)
             {
-                if (sibling != nullptr) sibling->recolorToBlack();
+                sibling->recolorToBlack();
                 parent->recolorToRed();
-
                 rotateLeft(parent);
-                sibling = parent->right; // get new sibling
+                sibling = parent->right; // Get new sibling
             }
 
-            // sibling is now a BLACK node
-            RBTNode *leftSib = (sibling == nullptr) ? nullptr : sibling->left;
-            RBTNode *rightSib = (sibling == nullptr) ? nullptr : sibling->right;
+            // Sibling is now a BLACK node
+            RBTNode *leftSib = sibling ? sibling->left : nullptr;
+            RBTNode *rightSib = sibling ? sibling->right : nullptr;
 
-            // Case 3: both of siblings children are black -> recolor S to red, push X <- P upwards
+            // Case 3: Both of sibling's children are black -> recolor S to red, push X <- P upwards
             if (nodeColor(leftSib) == BLACK && nodeColor(rightSib) == BLACK)
             {
                 sibling->recolorToRed();
@@ -1111,22 +1187,22 @@ void RedBlackTree<K, T>::removeFixup(RBTNode *doubleBlackNode, RBTNode *parent)
             else
             {
                 // Sibling has at least one RED child
-                
-                // Case 4: near child (left) is RED, far child (right) is BLACK -> right rotate as S, recolor S red, SL black
+
+                // Case 4: Near child (left) is RED, far child (right) is BLACK -> right rotate S, recolor S red, SL black
                 if (nodeColor(leftSib) == RED && nodeColor(rightSib) == BLACK)
                 {
-                    if (sibling != nullptr) sibling->recolorToRed();
-                    if (leftSib != nullptr) leftSib->recolorToBlack();
+                    sibling->recolorToRed();
+                    leftSib->recolorToBlack();
                     rotateRight(sibling);
                     sibling = parent->right;
                 }
-                // Case 5: far child (right) is RED -> left rotate P, color S with old color P, color P black, color SR black
-                rightSib = (sibling == nullptr) ? nullptr : sibling->right;
-                if (sibling != nullptr) sibling->color = parent->color;
+                // Case 5: Far child (right) is RED -> left rotate P, color S with old color P, color P black, color SR black
+                sibling->color = parent->color;
                 parent->recolorToBlack();
-                if (rightSib != nullptr) rightSib->recolorToBlack();
+                if (rightSib)
+                    rightSib->recolorToBlack();
                 rotateLeft(parent);
-                doubleBlackNode = root; // problem done
+                doubleBlackNode = root; // Problem resolved
             }
         }
         // Case B: doubleBlack is a RIGHT child
@@ -1137,18 +1213,17 @@ void RedBlackTree<K, T>::removeFixup(RBTNode *doubleBlackNode, RBTNode *parent)
             // Case 2: Red sibling -> rotate P right, recolor P red, S black
             if (nodeColor(sibling) == RED)
             {
-                if (sibling != nullptr) sibling->recolorToBlack();
+                sibling->recolorToBlack();
                 parent->recolorToRed();
-
                 rotateRight(parent);
-                sibling = parent->left; // get new sibling
+                sibling = parent->left; // Get new sibling
             }
 
-            // sibling is now a BLACK node
-            RBTNode *leftSib = (sibling == nullptr) ? nullptr : sibling->left;
-            RBTNode *rightSib = (sibling == nullptr) ? nullptr : sibling->right;
+            // Sibling is now a BLACK node
+            RBTNode *leftSib = sibling ? sibling->left : nullptr;
+            RBTNode *rightSib = sibling ? sibling->right : nullptr;
 
-            // Case 3: both of siblings children are black -> recolor S to red, push X <- P upwards
+            // Case 3: Both of sibling's children are black -> recolor S to red, push X <- P upwards
             if (nodeColor(leftSib) == BLACK && nodeColor(rightSib) == BLACK)
             {
                 sibling->recolorToRed();
@@ -1158,28 +1233,28 @@ void RedBlackTree<K, T>::removeFixup(RBTNode *doubleBlackNode, RBTNode *parent)
             else
             {
                 // Sibling has at least one RED child
-                
-                // Case 4: near child (right) is RED, far child (left) is BLACK -> left rotate as S, recolor S red, SR black
+
+                // Case 4: Near child (right) is RED, far child (left) is BLACK -> left rotate S, recolor S red, SR black
                 if (nodeColor(rightSib) == RED && nodeColor(leftSib) == BLACK)
                 {
-                    if (sibling != nullptr) sibling->recolorToRed();
-                    if (leftSib != nullptr) rightSib->recolorToBlack();
+                    sibling->recolorToRed();
+                    rightSib->recolorToBlack();
                     rotateLeft(sibling);
                     sibling = parent->left;
                 }
-                // Case 5: far child (left) is RED -> right rotate P, color S with old color P, color P black, color SL black
-                leftSib = (sibling == nullptr) ? nullptr : sibling->left;
-                if (sibling != nullptr) sibling->color = parent->color;
+                // Case 5: Far child (left) is RED -> right rotate P, color S with old color P, color P black, color SL black
+                sibling->color = parent->color;
                 parent->recolorToBlack();
-                if (leftSib != nullptr) leftSib->recolorToBlack();
+                if (leftSib)
+                    leftSib->recolorToBlack();
                 rotateRight(parent);
-                doubleBlackNode = root; // problem done
-                
+                doubleBlackNode = root; // Problem resolved
             }
         }
     }
-    if (doubleBlackNode != nullptr) {
-        doubleBlackNode->color = BLACK;
+    if (doubleBlackNode)
+    {
+        doubleBlackNode->recolorToBlack();
     }
 }
 
@@ -1236,17 +1311,43 @@ bool RedBlackTree<K, T>::contains(const K &key) const
 template <class K, class T>
 typename RedBlackTree<K, T>::RBTNode *RedBlackTree<K, T>::lowerBound(const K &key, bool &found) const
 {
-    RBTNode *result = lowerBoundNode(key);
-    found = (result != nullptr);
-    return result;
+    RBTNode *best = nullptr, *current = this->root;
+    while (current)
+    {
+        if (current->key >= key) // valid
+        {
+            best = current;
+            current = current->left; // try a smaller node
+        }
+        else
+        {
+            // too low, must go higher
+            current = current->right;
+        }
+    }
+    found = (best != nullptr);
+    return best;
 }
 
 template <class K, class T>
 typename RedBlackTree<K, T>::RBTNode *RedBlackTree<K, T>::upperBound(const K &key, bool &found) const
 {
-    RBTNode *result = upperBoundNode(key);
-    found = (result != nullptr);
-    return result;
+    RBTNode *best = nullptr, *current = this->root;
+    while (current)
+    {
+        if (current->key >= key) // valid
+        {
+            best = current;
+            current = current->left; // try a smaller node
+        }
+        else
+        {
+            // too low, must go higher
+            current = current->right;
+        }
+    }
+    found = (best != nullptr);
+    return best;
 }
 
 // =====================================
@@ -1268,7 +1369,6 @@ std::ostream &operator<<(std::ostream &os, const VectorRecord &record)
 
 // TODO: Implement all VectorStore methods here
 
-
 double VectorStore::norm(const vector<float> &vec) const
 {
     double result = 0;
@@ -1276,8 +1376,7 @@ double VectorStore::norm(const vector<float> &vec) const
     {
         result += (double)(*it) * (double)(*it);
     }
-    result /= (vec.size());
-    return result;
+    return sqrt(result);
 }
 
 VectorStore::VectorStore(int dimension, std::vector<float> *(*embeddingFunction)(const std::string &), const std::vector<float> &referenceVector)
@@ -1286,7 +1385,7 @@ VectorStore::VectorStore(int dimension, std::vector<float> *(*embeddingFunction)
     vectorStore = new AVLTree<double, VectorRecord>;
     normIndex = new RedBlackTree<double, VectorRecord>;
     ids = new AVLTree<int, int>;
-    this->referenceVector = const_cast<vector<float>*>(&referenceVector);
+    this->referenceVector = const_cast<vector<float> *>(&referenceVector);
     rootVector = nullptr;
     count = 0;
     averageDistance = 0;
@@ -1296,12 +1395,17 @@ VectorStore::VectorStore(int dimension, std::vector<float> *(*embeddingFunction)
 VectorStore::~VectorStore()
 {
     // TODO:
-    void (*deleteVector)(const VectorRecord &) = [](const VectorRecord &vec) -> void {delete vec.vector;};
+    void (*deleteVector)(const VectorRecord &) = [](const VectorRecord &vec) -> void
+    { delete vec.vector; };
     vectorStore->inorderTraversal(deleteVector);
-    if (rootVector) delete rootVector;
     delete vectorStore;
     delete normIndex;
     delete ids;
+}
+
+int VectorStore::size()
+{
+    return count;
 }
 
 bool VectorStore::empty()
@@ -1309,10 +1413,113 @@ bool VectorStore::empty()
     return count == 0;
 }
 
+pair<typename AVLTree<double, VectorRecord>::AVLNode *, int> VectorStore::buildTreeFromArray(vector<AVLTree<double, VectorRecord>::AVLNode *> &array, int start, int end)
+{
+    if (start > end)
+        return {nullptr, 0};
+
+    int mid = start + (end - start) / 2;
+
+    // AVLTree<double, VectorRecord>::AVLNode* node = new AVLTree<double, VectorRecord>::AVLNode(array[mid].distanceFromReference, array[mid]);
+    AVLTree<double, VectorRecord>::AVLNode *node = array[mid];
+    auto leftData = buildTreeFromArray(array, start, mid - 1);
+    auto rightData = buildTreeFromArray(array, mid + 1, end);
+
+    node->pLeft = leftData.first;
+    node->pRight = rightData.first;
+
+    int leftH = leftData.second;
+    int rightH = rightData.second;
+    node->balance = BalanceValue(rightH - leftH);
+    return {node, (leftH > rightH ? leftH : rightH) + 1};
+}
+
+void VectorStore::rebuildRootIfNeeded()
+{
+    if (count <= 1)
+        return;
+
+    vector<AVLTree<double, VectorRecord>::AVLNode *> nodeList;
+    auto avlRoot = vectorStore->getRoot();
+    vectorStore->getNodes(avlRoot, nodeList);
+    averageDistance = 0;
+    for (auto &node : nodeList)
+    {
+        double distance = l2Distance(*node->data.vector, *referenceVector);
+        averageDistance += distance;
+        node->key = distance;
+        node->data.distanceFromReference = distance;
+    }
+    averageDistance /= count;
+    mergeSort(nodeList, 0, nodeList.size() - 1);
+    rebuildRoot(nodeList);
+}
+
+void VectorStore::rebuildRoot(vector<AVLTree<double, VectorRecord>::AVLNode *> &nodeList)
+{
+    double closestToAvg = abs(nodeList[0]->data.distanceFromReference - averageDistance);
+    int bestIdx = 0;
+
+    for (int i = 0; i < (int)nodeList.size(); i++)
+    {
+        double currentToAvg = abs(nodeList[i]->data.distanceFromReference - averageDistance);
+        if (currentToAvg < closestToAvg)
+        {
+            closestToAvg = currentToAvg;
+            bestIdx = i;
+        }
+    }
+
+    vectorStore->root = nodeList[bestIdx];
+    auto newRoot = vectorStore->getRoot();
+    rootVector = &nodeList[bestIdx]->data;
+
+    auto leftData = buildTreeFromArray(nodeList, 0, bestIdx - 1);
+    auto rightData = buildTreeFromArray(nodeList, bestIdx + 1, nodeList.size() - 1);
+
+    newRoot->pLeft = leftData.first;
+    newRoot->pRight = rightData.first;
+    int leftH = leftData.second;
+    int rightH = rightData.second;
+    newRoot->balance = BalanceValue(rightH - leftH);
+}
+
+void VectorStore::rebuildTreeWithNewRoot(VectorRecord *newRoot)
+{
+    if (count <= 1)
+        return;
+    vector<AVLTree<double, VectorRecord>::AVLNode *> nodeList;
+    auto avlRoot = vectorStore->getRoot();
+    vectorStore->getNodes(avlRoot, nodeList);
+
+    int rootIdx = 0;
+    for (int i = 0; i < (int)nodeList.size(); i++)
+    {
+        if (&nodeList[i]->data == newRoot)
+        {
+            rootIdx = i;
+            break;
+        }
+    }
+
+    vectorStore->root = nodeList[rootIdx];
+    auto root = vectorStore->getRoot();
+    rootVector = &nodeList[rootIdx]->data;
+
+    auto leftData = buildTreeFromArray(nodeList, 0, rootIdx - 1);
+    auto rightData = buildTreeFromArray(nodeList, rootIdx + 1, nodeList.size() - 1);
+
+    root->pLeft = leftData.first;
+    root->pRight = rightData.first;
+    int leftH = leftData.second;
+    int rightH = rightData.second;
+    root->balance = BalanceValue(rightH - leftH);
+}
+
 void VectorStore::clear()
 {
-    // vector<float> *referenceCopy = new vector<float>(*referenceVector); // seprarate from record vectors
-    void (*deleteRecord)(const VectorRecord &) = [](const VectorRecord &record) -> void {
+    void (*deleteRecord)(const VectorRecord &) = [](const VectorRecord &record) -> void
+    {
         if (record.vector)
         {
             delete record.vector;
@@ -1322,47 +1529,65 @@ void VectorStore::clear()
     vectorStore->clear();
     normIndex->clear();
     ids->clear();
-    if (rootVector) delete rootVector;
     rootVector = nullptr;
     count = 0;
     averageDistance = 0;
     maxId = 0;
-
 }
 
 vector<float> *VectorStore::preprocessing(string rawText)
 {
     vector<float> *vec = embeddingFunction(rawText);
-    if (vec->size() != this->dimension)
+    if ((int)vec->size() != this->dimension)
     {
         vec->resize(this->dimension, 0);
     }
     return vec;
 }
 
-//FIXME: a lot of things are wrong here
+// FIXME: a lot of things are wrong here
 void VectorStore::addText(string rawText)
 {
     vector<float> *vec = preprocessing(rawText);
     double distanceToRef = l2Distance(*vec, *referenceVector);
-    averageDistance = (averageDistance * count + distanceToRef) / (count + 1);
-    VectorRecord record(maxId + 1, rawText, vec, distanceToRef);
+    // cout << "Calculated dist\n";
     double normValue = norm(*vec);
+    // cout << "Calculated norm\n";
+    VectorRecord record(maxId + 1, rawText, vec, distanceToRef, normValue);
+    int sizeBefore = vectorStore->size();
+    vectorStore->insert(distanceToRef, record);
+    int sizeAfter = vectorStore->size();
+    // cout << "AVL insetion successfull\n";
+    if (sizeBefore == sizeAfter)
+    {
+        return;
+    }
+    averageDistance = (averageDistance * (double)count + distanceToRef) / (double)(count + 1);
+    // cout << "Updated distance\n";
+
     if (count == 0)
     {
-        rootVector = new VectorRecord(record);
+        rootVector = &vectorStore->root->data;
     }
-    vectorStore->insert(distanceToRef, record);
-    if (abs(distanceToRef - averageDistance) < (rootVector->distanceFromReference - averageDistance))
+    vector<AVLTree<double, VectorRecord>::AVLNode *> nodeList;
+    auto avlRoot = vectorStore->getRoot();
+    rootVector = &avlRoot->data;
+    vectorStore->getNodes(avlRoot, nodeList);
+
+    for (auto node : nodeList)
     {
-        delete rootVector;
-        rootVector = new VectorRecord(record); // FIXME: do something with this
-        rebuildRootIfNeeded();
+        if (abs(node->data.distanceFromReference - averageDistance) < abs(rootVector->distanceFromReference - averageDistance))
+        {
+            rebuildRoot(nodeList);
+            break;
+        }
     }
     normIndex->insert(normValue, record);
+    // cout << "Inserted into RBT\n";
     count++;
     maxId++;
     ids->insert(maxId, maxId);
+    // cout << "Inserted key\n";
 }
 
 void VectorStore::rangeCheck(int index) const
@@ -1376,7 +1601,6 @@ void VectorStore::rangeCheck(int index) const
 VectorRecord *VectorStore::getVector(int index)
 {
     rangeCheck(index);
-    int count = 0;
     AVLTree<double, VectorRecord>::AVLNode *record = vectorStore->getNodeAt(index);
     return &record->data;
 }
@@ -1384,7 +1608,6 @@ VectorRecord *VectorStore::getVector(int index)
 string VectorStore::getRawText(int index)
 {
     rangeCheck(index);
-    int count = 0;
     AVLTree<double, VectorRecord>::AVLNode *record = vectorStore->getNodeAt(index);
     return record->data.rawText;
 }
@@ -1392,7 +1615,6 @@ string VectorStore::getRawText(int index)
 int VectorStore::getId(int index)
 {
     rangeCheck(index);
-    int count = 0;
     AVLTree<double, VectorRecord>::AVLNode *record = vectorStore->getNodeAt(index);
     return record->data.id;
 }
@@ -1400,11 +1622,66 @@ int VectorStore::getId(int index)
 bool VectorStore::removeAt(int index)
 {
     // TODO:
+    rangeCheck(index);
+    AVLTree<double, VectorRecord>::AVLNode *record = vectorStore->getNodeAt(index);
+    VectorRecord recToRemove = record->data;
+    // bool removeRoot = (recToRemove == *rootVector);
+    vector<float> *vecToRemove = recToRemove.vector;
+    delete vecToRemove;
+
+    double avlKey = record->key;
+    double rbtKey = recToRemove.norm;
+    int removeId = recToRemove.id;
+    averageDistance = (averageDistance * (double)count - avlKey) / (double)(count - 1);
+
+    vectorStore->remove(avlKey);
+    normIndex->remove(rbtKey);
+    count--;
+    if (count == 0) 
+    {
+        averageDistance = 0;
+        rootVector = nullptr;
+    }
+    ids->remove(removeId);
+    if (!ids->empty())
+    {
+        maxId = ids->findMax()->key;
+    }
+    else
+    {
+        maxId = 0;
+    }
+
+    if (count <= 1)
+    {
+        if (count == 0)
+            rootVector = nullptr;
+        else
+            rootVector = &vectorStore->getRoot()->data;
+        return true; // nothing to rebalance
+    }
+    
+    vector<AVLTree<double, VectorRecord>::AVLNode *> nodeList;
+    auto avlRoot = vectorStore->getRoot();
+    rootVector = &avlRoot->data;
+    vectorStore->getNodes(avlRoot, nodeList);
+
+    for (auto node : nodeList)
+    {
+        if (abs(node->data.distanceFromReference - averageDistance) < abs(rootVector->distanceFromReference - averageDistance))
+        {
+            rebuildRoot(nodeList);
+            break;
+        }
+    }
+    return true;
 }
 
-void VectorStore::setReferenceVector(const vector<float>& newReference)
+void VectorStore::setReferenceVector(const vector<float> &newReference)
 {
     // TODO:
+    referenceVector = const_cast<vector<float> *>(&newReference);
+    rebuildRootIfNeeded();
 }
 
 vector<float> *VectorStore::getReferenceVector() const
@@ -1414,7 +1691,7 @@ vector<float> *VectorStore::getReferenceVector() const
 
 VectorRecord *VectorStore::getRootVector() const
 {
-    return &vectorStore->getRoot()->data;
+    return rootVector;
 }
 
 double VectorStore::getAverageDistance() const
@@ -1422,24 +1699,23 @@ double VectorStore::getAverageDistance() const
     return averageDistance;
 }
 
-void VectorStore::setEmbeddingFunction(vector<float>* (*newEmbeddingFunction)(const string&))
+void VectorStore::setEmbeddingFunction(vector<float> *(*newEmbeddingFunction)(const string &))
 {
     embeddingFunction = newEmbeddingFunction;
 }
 
-void VectorStore::forEachAction(AVLTree<double, VectorRecord>::AVLNode *root, void (*action)(vector<float>&, int, string&))
+void VectorStore::forEachAction(AVLTree<double, VectorRecord>::AVLNode *root, void (*action)(vector<float> &, int, string &))
 {
     if (root)
     {
         forEachAction(root->pLeft, action);
-        action(*root->data.vector, root->data.rawLength, root->data.rawText);
+        action(*root->data.vector, root->data.id, root->data.rawText);
         forEachAction(root->pRight, action);
     }
 }
 
-void VectorStore::forEach(void (*action)(vector<float>&, int, string&))
+void VectorStore::forEach(void (*action)(vector<float> &, int, string &))
 {
-    // FIXME: fix this
     auto *root = vectorStore->getRoot();
     forEachAction(root, action);
 }
@@ -1472,7 +1748,7 @@ vector<int> VectorStore::getAllIdsSortedByDistance() const
     return result;
 }
 
-vector<VectorRecord*> VectorStore::getAllVectorsSortedByDistance() const
+vector<VectorRecord *> VectorStore::getAllVectorsSortedByDistance() const
 {
     vector<VectorRecord *> result;
     auto root = vectorStore->getRoot();
@@ -1480,10 +1756,10 @@ vector<VectorRecord*> VectorStore::getAllVectorsSortedByDistance() const
     return result;
 }
 
-double VectorStore::cosineSimilarity(const vector<float>& v1, const vector<float>& v2)
+double VectorStore::cosineSimilarity(const vector<float> &v1, const vector<float> &v2)
 {
     double prod = 0, normV1 = 0, normV2 = 0;
-    for (int i = 0; i < v1.size(); i++)
+    for (int i = 0; i < (int)v1.size(); i++)
     {
         double val1 = v1[i], val2 = v2[i];
         prod += val1 * val2;
@@ -1493,20 +1769,20 @@ double VectorStore::cosineSimilarity(const vector<float>& v1, const vector<float
     return prod / (sqrt(normV1) * sqrt(normV2));
 }
 
-double VectorStore::l1Distance(const vector<float>& v1, const vector<float>& v2)
+double VectorStore::l1Distance(const vector<float> &v1, const vector<float> &v2)
 {
     double result = 0;
-    for (int i = 0; i < v1.size(); i++)
+    for (int i = 0; i < (int)v1.size(); i++)
     {
         result += abs((double)v1[i] - double(v2[i]));
     }
     return result;
 }
 
-double VectorStore::l2Distance(const vector<float>& v1, const vector<float>& v2)
+double VectorStore::l2Distance(const vector<float> &v1, const vector<float> &v2)
 {
     double result = 0;
-    for (int i = 0; i < v1.size(); i++)
+    for (int i = 0; i < (int)v1.size(); i++)
     {
         double val = (double)v1[i] - double(v2[i]);
         result += pow(val, 2);
@@ -1514,11 +1790,11 @@ double VectorStore::l2Distance(const vector<float>& v1, const vector<float>& v2)
     return sqrt(result);
 }
 
-double VectorStore::estimateD_Linear(const std::vector<float> &query, int k, double averageDistance, 
-                                    const std::vector<float> &reference, double c0_bias, double c1_slope)
+double VectorStore::estimateD_Linear(const std::vector<float> &query, int k, double averageDistance,
+                                     const std::vector<float> &reference, double c0_bias, double c1_slope)
 {
-    vector<float> subtraction;
-    for (int i = 0; i < query.size(); i++)
+    vector<float> subtraction(query.size());
+    for (int i = 0; i < (int)query.size(); i++)
     {
         subtraction[i] = query[i] - reference[i];
     }
@@ -1566,15 +1842,16 @@ void VectorStore::findNearestHelper(AVLTree<double, VectorRecord>::AVLNode *root
             bestDistance = distance;
             bestID = root->data.id;
         }
-        findNearestHelper(root->pLeft, query, metric, bestDistance, bestID);
+        findNearestHelper(root->pRight, query, metric, bestDistance, bestID);
     }
 }
 
-int VectorStore::findNearest(const std::vector<float> &query, string metric = "cosine")
+int VectorStore::findNearest(const std::vector<float> &query, string metric)
 {
     metricCheck(metric);
     // TODO:
-    if (count <= 0) return -1;
+    if (count <= 0)
+        return -1;
     auto root = vectorStore->getRoot();
     double bestDistance = distanceByMetric(*root->data.vector, query, metric);
     int bestID = root->data.id;
@@ -1582,8 +1859,257 @@ int VectorStore::findNearest(const std::vector<float> &query, string metric = "c
     return bestID;
 }
 
+int *VectorStore::topKNearest(const vector<float> &query, int k, string metric)
+{
+    // TODO:
+    metricCheck(metric);
+    if (k <= 0 || k > count)
+    {
+        throw invalid_k_value();
+    }
+    double normQ = norm(query);
+    double D = estimateD_Linear(query, k, averageDistance, *referenceVector);
+    auto candidates = normIndex->filter(normQ - D, normQ + D);
+    int m = candidates.size();
+    if (m < k)
+        k = m;
+    cout << "Value m: " << m;
+    if (m == 0) return nullptr;
+    vector<pair<int, double>> distances;
+    for (auto candidate : candidates)
+    {
+        double distance = distanceByMetric(*candidate->data.vector, query, metric);
+        if (metric != "cosine")
+            distances.push_back({candidate->data.id, distance});
+        else
+            distances.push_back({candidate->data.id, 1 - distance});
+    }
 
+    int *result = new int[k];
 
+    MaxHeap<pair<int, double>> heap([](const pair<int, double> &a, const pair<int, double> &b) -> bool
+                                    { return a.second < b.second; });
+    for (auto distance : distances)
+    {
+        if (heap.size() < k)
+        {
+            heap.push(distance);
+        }
+        else if (heap.lessThan(distance, heap.peek()))
+        {
+            heap.pop();
+            heap.push(distance);
+        }
+    }
+
+    int index = 0;
+    while (!heap.empty())
+    {
+        result[index++] = heap.pop().first;
+    }
+
+    // Reverse the array
+    int left = 0;
+    int right = k - 1;
+    while (left < right)
+    {
+        auto temp = result[left];
+        result[left] = result[right];
+        result[right] = temp;
+        left++;
+        right--;
+    }
+    return result;
+}
+
+void VectorStore::rangeQueryRootHelper(AVLTree<double, VectorRecord>::AVLNode *root, const double &minDist, const double &maxDist, vector<int> &result) const
+{
+    if (root)
+    {
+        if (minDist <= root->key)
+            rangeQueryRootHelper(root->pLeft, minDist, maxDist, result);
+        if (minDist <= root->key && root->key <= maxDist)
+            result.push_back(root->data.id);
+        if (root->key <= maxDist)
+            rangeQueryRootHelper(root->pRight, minDist, maxDist, result);
+    }
+}
+
+int *VectorStore::rangeQueryFromRoot(double minDist, double maxDist) const
+{
+    if (count == 0)
+        return nullptr;
+    vector<int> result;
+    auto avlRoot = vectorStore->getRoot();
+    rangeQueryRootHelper(avlRoot, minDist, maxDist, result);
+    cout << result.size() << endl;
+    if (result.size() == 0) return nullptr;
+    int *arr = new int[result.size()];
+    for (int i = 0; i < result.size(); i++)
+    {
+        arr[i] = result[i];
+    }
+    return arr;
+}
+
+void VectorStore::rangeQueryHelper(AVLTree<double, VectorRecord>::AVLNode *root, const vector<float> &query, const double &radius, string metric, vector<pair<int, double>> &result) const
+{
+    if (root)
+    {
+        rangeQueryHelper(root->pLeft, query, radius, metric, result);
+        double dist = distanceByMetric(*root->data.vector, query, metric);
+        if (dist < radius)
+        {
+            result.push_back({root->data.id, dist});
+        }
+        rangeQueryHelper(root->pRight, query, radius, metric, result);
+    }
+}
+
+int *VectorStore::rangeQuery(const vector<float> &query, double radius, std::string metric) const
+{
+    if (count == 0)
+        return nullptr;
+    vector<pair<int, double>> results;
+    // int size = 0;
+    auto avlRoot = vectorStore->getRoot();
+    rangeQueryHelper(avlRoot, query, radius, metric, results);
+    if (results.size() == 0) return nullptr;
+
+    MaxHeap<pair<int, double>> heap([](const pair<int, double> &a, const pair<int, double> &b) -> bool
+                                    { return a.second < b.second; });
+    for (auto result : results)
+    {
+        heap.push(result);
+    }
+
+    int *arr = new int[results.size()];
+    for (int i = results.size() - 1; i >= 0; i--)
+    {
+        arr[i] = heap.peek().first;
+        heap.pop();
+    }
+    if (metric == "cosine")
+    {
+        int left = 0;
+        int right = results.size() - 1;
+        while (left < right)
+        {
+            auto temp = arr[left];
+            arr[left] = arr[right];
+            arr[right] = temp;
+            left++;
+            right--;
+        }
+    }
+    return arr;
+}
+
+void VectorStore::boundingBoxHelper(AVLTree<double, VectorRecord>::AVLNode *root, const vector<float> &minBound, const vector<float> &maxBound, vector<int> &result) const
+{
+    if (root)
+    {
+        boundingBoxHelper(root->pLeft, minBound, maxBound, result);
+        vector<float> current = *root->data.vector;
+        bool between = true;
+        for (int i = 0; i < (int)current.size(); i++)
+        {
+            if (current[i] <= minBound[i] || current[i] >= maxBound[i])
+            {
+                between = false;
+                break;
+            }
+        }
+        if (between)
+        {
+            result.push_back(root->data.id);
+        }
+        boundingBoxHelper(root->pRight, minBound, maxBound, result);
+    }
+}
+
+int *VectorStore::boundingBoxQuery(const vector<float> &minBound, const vector<float> &maxBound) const
+{
+    if (count == 0)
+        return nullptr;
+    vector<int> result;
+    // int size = 0;
+    auto avlRoot = vectorStore->getRoot();
+    boundingBoxHelper(avlRoot, minBound, maxBound, result);
+    if (result.size() == 0) return nullptr;
+    int *arr = new int[result.size()];
+    for (int i = 0; i < result.size(); i++)
+    {
+        arr[i] = result[i];
+    }
+    return arr;
+}
+
+double VectorStore::getMaxDistance() const
+{
+    auto current = vectorStore->getRoot();
+    while (current->pRight)
+    {
+        current = current->pRight;
+    }
+    return current->key;
+}
+
+double VectorStore::getMinDistance() const
+{
+    auto current = vectorStore->getRoot();
+    while (current->pLeft)
+    {
+        current = current->pLeft;
+    }
+    return current->key;
+}
+
+VectorRecord VectorStore::computeCentroid(const vector<VectorRecord *> &records) const
+{
+    vector<float> *resultVec = new vector<float>;
+
+    int maxDimension = records[0]->vector->size();
+    int count = records.size();
+    for (int dim = 0; dim < (int)maxDimension; dim++)
+    {
+        float avg = 0.0;
+        for (int i = 0; i < count; i++)
+        {
+            avg += (*records[i]->vector)[dim];
+        }
+        avg /= count;
+        resultVec->push_back(avg);
+    }
+    double resultNorm = this->norm(*resultVec);
+    double distanceToRef = distanceByMetric(*resultVec, *referenceVector, "euclidean");
+    VectorRecord result = VectorRecord(-1, "centroid", resultVec, distanceToRef, resultNorm);
+    return result;
+}
+
+void VectorStore::findNearestDistanceHelper(AVLTree<double, VectorRecord>::AVLNode *root, double targetDistance, VectorRecord *&best) const
+{
+    if (root)
+    {
+        findNearestDistanceHelper(root->pLeft, targetDistance, best);
+        if (abs(root->key - targetDistance) < abs(best->distanceFromReference < targetDistance))
+        {
+            best = &root->data;
+        }
+        findNearestDistanceHelper(root->pRight, targetDistance, best);
+    }
+}
+
+VectorRecord *VectorStore::findVectorNearestToDistance(double targetDistance) const
+{
+    if (count == 0)
+        return nullptr;
+
+    auto avlRoot = vectorStore->getRoot();
+    VectorRecord *best = &avlRoot->data;
+    findNearestDistanceHelper(avlRoot, targetDistance, best);
+    return best;
+}
 
 // Explicit template instantiation for the type used by VectorStore
 template class AVLTree<double, VectorRecord>;

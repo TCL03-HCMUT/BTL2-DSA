@@ -66,6 +66,7 @@ public:
 
     int getHeight() const;
     int getSize() const;
+    int size() const;
     bool empty() const;
     void clear();
 
@@ -77,6 +78,8 @@ public:
 
     AVLNode *getNodeAt(int index);
     AVLNode *getNodeAt(AVLNode *node, int index, int &count);
+    void getNodes(AVLNode *root, vector<AVLNode *> &result);
+    AVLNode *findMax();
 };
 
 enum Color
@@ -132,8 +135,10 @@ protected:
     // Delete helpers
     void transplant(RBTNode *u, RBTNode *v);
     RBTNode *findMax(RBTNode *node);
+    RBTNode *findMin(RBTNode *node) const;
     void removeNode(RBTNode *deleteNode);
     void removeFixup(RBTNode *doubleBlackNode, RBTNode *doubleBlackParent);
+    RBTNode *successor(RBTNode *node) const;
 
 public:
     RedBlackTree();
@@ -152,7 +157,8 @@ public:
 
     void printTreeStructure() const;
 
-    
+    RBTNode *getRoot() const { return root; }
+    vector<RBTNode *> filter(K min, K max) const;
 };
 
 // ------------------------------
@@ -166,19 +172,21 @@ public:
     int rawLength;
     std::vector<float> *vector;
     double distanceFromReference;
+    double norm;
 
     VectorRecord()
-        : id(-1), rawLength(0), vector(nullptr), distanceFromReference(0.0) {}
+        : id(-1), rawLength(0), vector(nullptr), distanceFromReference(0.0), norm(0.0) {}
 
     VectorRecord(int _id,
                  const std::string &_rawText,
                  std::vector<float> *_vec,
-                 double _dist)
+                 double _dist, double _norm = 0.0)
         : id(_id),
           rawText(_rawText),
           rawLength(static_cast<int>(_rawText.size())),
           vector(_vec),
-          distanceFromReference(_dist) {}
+          distanceFromReference(_dist),
+          norm(_norm) {}
     VectorRecord(const VectorRecord &other)
     {
         this->id = other.id;
@@ -186,6 +194,23 @@ public:
         this->rawLength = other.rawLength;
         this->vector = other.vector;
         this->distanceFromReference = other.distanceFromReference;
+        this->norm = other.norm;
+    }
+
+    VectorRecord &operator=(const VectorRecord &other)
+    {
+        this->id = other.id;
+        this->rawText = other.rawText;
+        this->rawLength = other.rawLength;
+        this->vector = other.vector;
+        this->distanceFromReference = other.distanceFromReference;
+        this->norm = other.norm;
+        return *this;
+    }
+
+    bool operator==(const VectorRecord &other)
+    {
+        return (this->id == other.id) && (this->rawText == other.rawText) && (this->rawLength == other.rawLength) && ((this->vector == other.vector) || (*this->vector == *other.vector)) && (this->distanceFromReference == other.distanceFromReference) && (this->norm == other.norm);
     }
 
     // Overload operator << to print only the id
@@ -208,7 +233,7 @@ private:
     int count;
     double averageDistance;
     int maxId;
-    AVLTree<int, int> *ids;
+
     vector<VectorRecord> recordList;
 
     std::vector<float> *(*embeddingFunction)(const std::string &);
@@ -221,15 +246,86 @@ private:
     void rebuildTreeWithNewRoot(VectorRecord *newRoot);
 
     VectorRecord *findVectorNearestToDistance(double targetDistance) const;
-    double norm(const std::vector<float> &vec) const;
 
     void rangeCheck(int index) const;
     void metricCheck(string metric) const;
-    
+
     void findNearestHelper(AVLTree<double, VectorRecord>::AVLNode *root, const std::vector<float> &query, string metric, double &bestDistance, int &bestID);
 
+    void rangeQueryRootHelper(AVLTree<double, VectorRecord>::AVLNode *root, const double &minDist, const double &maxDist, vector<int> &result) const;
+    void rangeQueryHelper(AVLTree<double, VectorRecord>::AVLNode *root, const vector<float> &query, const double &radius, string metric, vector<pair<int, double>> &result) const;
+    void boundingBoxHelper(AVLTree<double, VectorRecord>::AVLNode *root, const vector<float> &minBound, const vector<float> &maxBound, vector<int> &result) const;
+    void findNearestDistanceHelper(AVLTree<double, VectorRecord>::AVLNode *root, double targetDistance, VectorRecord *&best) const;
+    void merge(vector<AVLTree<double, VectorRecord>::AVLNode *> &arr, int left, int mid, int right)
+    {
+        int n1 = mid - left + 1;
+        int n2 = right - mid;
+
+        std::vector<AVLTree<double, VectorRecord>::AVLNode *> L(n1);
+        std::vector<AVLTree<double, VectorRecord>::AVLNode *> R(n2);
+
+        for (int i = 0; i < n1; i++)
+            L[i] = arr[left + i];
+        for (int j = 0; j < n2; j++)
+            R[j] = arr[mid + 1 + j];
+
+        int i = 0;
+        int j = 0;
+        int k = left;
+
+        while (i < n1 && j < n2)
+        {
+            if (L[i]->data.distanceFromReference <= R[j]->data.distanceFromReference)
+            {
+                arr[k] = L[i];
+                i++;
+            }
+            else
+            {
+                arr[k] = R[j];
+                j++;
+            }
+            k++;
+        }
+
+        while (i < n1)
+        {
+            arr[k] = L[i];
+            i++;
+            k++;
+        }
+
+        while (j < n2)
+        {
+            arr[k] = R[j];
+            j++;
+            k++;
+        }
+    }
+    void mergeSort(vector<AVLTree<double, VectorRecord>::AVLNode *> &arr, int left, int right)
+    {
+        if (left >= right)
+        {
+            return;
+        }
+
+        int mid = left + (right - left) / 2;
+
+        mergeSort(arr, left, mid);
+        mergeSort(arr, mid + 1, right);
+
+        merge(arr, left, mid, right);
+    }
+
+    void rebuildRoot(vector<AVLTree<double, VectorRecord>::AVLNode *> &nodeList);
+
+    pair<AVLTree<double, VectorRecord>::AVLNode *, int> buildTreeFromArray(vector<AVLTree<double, VectorRecord>::AVLNode *> &array, int start, int end);
+
 public:
-    void forEachAction(AVLTree<double, VectorRecord>::AVLNode *root, void (*action)(vector<float>&, int, string&));
+    AVLTree<int, int> *ids;
+    AVLTree<double, VectorRecord> *getAVLTree() {return vectorStore;}
+    double norm(const std::vector<float> &vec) const;
+    void forEachAction(AVLTree<double, VectorRecord>::AVLNode *root, void (*action)(vector<float> &, int, string &));
     void getSortedId(AVLTree<double, VectorRecord>::AVLNode *root, vector<int> &ids) const;
     void getSortedRecords(AVLTree<double, VectorRecord>::AVLNode *root, vector<VectorRecord *> &records) const;
     VectorStore(int dimension,
@@ -276,6 +372,117 @@ public:
     double getMaxDistance() const;
     double getMinDistance() const;
     VectorRecord computeCentroid(const std::vector<VectorRecord *> &records) const;
+};
+
+template <class T>
+class MaxHeap
+{
+public:
+    vector<T> data;
+    bool (*lessThan)(const T &, const T &);
+    MaxHeap(bool (*lessThan)(const T &, const T &) = [](const T &a, const T &b) -> bool
+            { return a < b; })
+    {
+        this->lessThan = lessThan;
+    }
+
+    MaxHeap(vector<T> array, bool (*lessThan)(const T &, const T &) = [](const T &a, const T &b) -> bool
+            { return a < b; })
+    {
+        data = array;
+        heapify();
+        this->lessThan = lessThan;
+    }
+
+    void heapUp(int index)
+    {
+        while (index > 0)
+        {
+            int parent = (index - 1) / 2;
+            if (lessThan(data[parent], data[index]))
+            {
+                // swap(data[parent], data[index]);
+                auto temp = data[parent];
+                data[parent] = data[index];
+                data[index] = temp;
+                index = parent;
+            }
+            else
+                break;
+        }
+    }
+
+    void heapDown(int index)
+    {
+        int size = data.size();
+        while (2 * index + 1 < size)
+        {
+            int left = 2 * index + 1;
+            int right = 2 * index + 2;
+            int largest = index;
+
+            if (left < size && lessThan(data[largest], data[left]))
+            {
+                largest = left;
+            }
+
+            if (right < size && lessThan(data[largest], data[right]))
+            {
+                largest = right;
+            }
+
+            if (largest != index)
+            {
+                // swap(data[largest], data[index]);
+                auto temp = data[largest];
+                data[largest] = data[index];
+                data[index] = temp;
+                index = largest;
+            }
+            else
+                break;
+        }
+    }
+
+    void heapify()
+    {
+        for (int i = data.size() / 2 - 1; i > -1; i--)
+        {
+            heapDown(i);
+        }
+    }
+
+    T peek()
+    {
+        return data[0];
+    }
+
+    int size()
+    {
+        return data.size();
+    }
+
+    void push(T val)
+    {
+        data.push_back(val);
+        heapUp(data.size() - 1);
+    }
+
+    T pop()
+    {
+        T result = data[0];
+
+        T last = data.back();
+        data[0] = last;
+        data.pop_back();
+        heapDown(0);
+        return result;
+    }
+
+    bool empty()
+    {
+        return data.size() == 0;
+    }
 };
 
 #endif // VECTORSTORE_H
